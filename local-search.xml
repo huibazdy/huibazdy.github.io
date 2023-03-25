@@ -4,6 +4,25 @@
   
   
   <entry>
+    <title>重建二叉树</title>
+    <link href="/2023/03/25/%E9%87%8D%E5%BB%BA%E4%BA%8C%E5%8F%89%E6%A0%91/"/>
+    <url>/2023/03/25/%E9%87%8D%E5%BB%BA%E4%BA%8C%E5%8F%89%E6%A0%91/</url>
+    
+    <content type="html"><![CDATA[<h1 id="一、问题描述"><a href="#一、问题描述" class="headerlink" title="一、问题描述"></a>一、问题描述</h1><p>根据树的前序、中序遍历结果，重建二叉树，并返回二叉树的根结点。</p><h1 id="二、实例"><a href="#二、实例" class="headerlink" title="二、实例"></a>二、实例</h1><p>【输入】前序遍历序列：{1, 2, 4, 7, 3, 5, 6, 8}；中序遍历序列：{4, 7, 2, 1, 5, 3, 8, 6}</p><p>【输出】</p><div align = "center"> <img src="/2023/03/25/%E9%87%8D%E5%BB%BA%E4%BA%8C%E5%8F%89%E6%A0%91/1.png" class=""></div><h1 id="三、问题分析"><a href="#三、问题分析" class="headerlink" title="三、问题分析"></a>三、问题分析</h1><ol><li><p>根据前序遍历的顺序（根左右），可以很容易从前序遍历序列中得出，首元素 <strong>1</strong> 即为整棵树的根节点，或者说是第一层的节点：</p> <div align = "center"><img src="/2023/03/25/%E9%87%8D%E5%BB%BA%E4%BA%8C%E5%8F%89%E6%A0%91/2.png" class=""></div></li><li><p>根据中序遍历的顺序（左根右），结合上一步得出的根节点，可以用根节点 1 划分中序遍历序列，从而得到左右子树：</p> <div align = "center"><img src="/2023/03/25/%E9%87%8D%E5%BB%BA%E4%BA%8C%E5%8F%89%E6%A0%91/3.png" class=""></div></li><li><p>根据步骤 2 中得到的左右子树序列，可以在前序序列中标出，并且找到左右子树的根节点（首元素），分别是 2 和 5，这两个元素也是第二层的两个节点值：</p> <div align = "center"><img src="/2023/03/25/%E9%87%8D%E5%BB%BA%E4%BA%8C%E5%8F%89%E6%A0%91/4.png" class=""></div></li><li></li></ol>]]></content>
+    
+    
+    
+    <tags>
+      
+      <tag>DSA</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>Hello World</title>
     <link href="/2023/03/19/hello-world/"/>
     <url>/2023/03/19/hello-world/</url>
