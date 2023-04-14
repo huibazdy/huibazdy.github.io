@@ -4,6 +4,64 @@
   
   
   <entry>
+    <title>进程间通信：管道</title>
+    <link href="/2023/04/14/pipe/"/>
+    <url>/2023/04/14/pipe/</url>
+    
+    <content type="html"><![CDATA[<h1 id="一、管道简介"><a href="#一、管道简介" class="headerlink" title="一、管道简介"></a>一、管道简介</h1><p>管道是一种最古老的进程间通信方式。它具有以下几个特点：</p><ol><li>属于<em><strong>半双工</strong></em>通信方式；</li><li>应用于有<em><strong>亲缘关系</strong></em>的进程之间；</li></ol><p>管道的本质是开辟在<em><strong>内核空间</strong></em>中的一个数据<em><strong>缓冲区</strong></em>。</p><h1 id="二、工作原理"><a href="#二、工作原理" class="headerlink" title="二、工作原理"></a>二、工作原理</h1><p>单个进程（父进程）创建管道，得到两个文件描述符：<code>fd[0]</code>、<code>fd[1]</code></p><div align = "center"> <img src="/2023/04/14/pipe/1.png" class=""></div><p>但是单个进程的管道是不存在通信的，父进程调用创建子进程，此时子进程也有两个文件描述符指向同一个管道。</p><div align = "center"> <img src="/2023/04/14/pipe/2.png" class=""></div><p>根据父子进程的数据流向，可分为两种情况：</p><ol><li>数据流向为从父进程到子进程。父进程关闭读端（<code>close(fd[0])</code>），子进程关闭写端（<code>close(fd[1])</code>），这样父进程可以往管道里写数据，子进程可以从管道里读数据。</li></ol><div align = "center"> <img src="/2023/04/14/pipe/3.png" class=""></div><ol start="2"><li>数据流向为从子进程到父进程。父进程关闭写端（<code>close(fd[1])</code>），子进程关闭读端（<code>close(fd[0])</code>），这样子进程可以往管道里写数据，父进程可以从管道里读数据。</li></ol><div align = "center"> <img src="/2023/04/14/pipe/4.png" class=""></div><h1 id="三、使用管道"><a href="#三、使用管道" class="headerlink" title="三、使用管道"></a>三、使用管道</h1><p>一般在创建子进程前由父进程调用<code>pipe()</code>系统调用，这样两个进程才能共享管道的读写端两个 fd，然后利用<code>fork()</code>系统调用创建子进程。</p><p>子进程会继承父进程打开的文件句柄，所以父子进程可以通过创建的管道进行通信。</p><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-meta">#<span class="hljs-keyword">include</span><span class="hljs-string">&lt;stdio.h&gt;</span></span><br><span class="hljs-meta">#incldude<span class="hljs-string">&lt;unistd.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span><span class="hljs-string">&lt;sys/types.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span><span class="hljs-string">&lt;string.h&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span><span class="hljs-string">&lt;stdlib.h&gt;</span></span><br><br><span class="hljs-type">int</span> <span class="hljs-title function_">main</span><span class="hljs-params">()</span><br>&#123;<br>    <span class="hljs-comment">/* 0.准备用于传输的数据 */</span><br>    <span class="hljs-type">char</span> *msg = <span class="hljs-string">&quot;This is pipe test.&quot;</span>;<br>    <span class="hljs-type">char</span> buf[<span class="hljs-number">512</span>];  <span class="hljs-comment">//开辟缓冲区</span><br>    <br>    <span class="hljs-comment">/* 1.创建管道 */</span><br>    <span class="hljs-type">int</span> fd[<span class="hljs-number">2</span>];            <span class="hljs-comment">//用于管道读写端的两个文件描述符</span><br>    <span class="hljs-type">int</span> ret = <span class="hljs-number">-1</span>;<br>    ret = pipe(fd);<br>    <span class="hljs-keyword">if</span>(ret == <span class="hljs-number">-1</span>)&#123;       <span class="hljs-comment">//判断管道是否创建成功</span><br>        <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;Failed to create pipe!\n&quot;</span>);<br>        <span class="hljs-keyword">return</span> <span class="hljs-number">-1</span>；<br>    &#125;<br>    <span class="hljs-comment">/* 2.创建子进程 */</span><br>    <span class="hljs-type">pid_t</span> pid;<br>    pid = fork();<br>    <span class="hljs-keyword">if</span>(pid &lt; <span class="hljs-number">0</span> )<br>        <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;Failed to fork!\n&quot;</span>);<br>    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span>(pid == <span class="hljs-number">0</span>)&#123;         <span class="hljs-comment">//子进程</span><br>        close(fd[<span class="hljs-number">0</span>]);          <span class="hljs-comment">//关闭读端</span><br>        ret = write(fd[<span class="hljs-number">1</span>],msg,<span class="hljs-built_in">strlen</span>(msg));  <span class="hljs-comment">//子进程向管道写端写数据</span><br>        <span class="hljs-built_in">exit</span>(<span class="hljs-number">0</span>);<br>    &#125;<br>    <span class="hljs-keyword">else</span>&#123;                 <span class="hljs-comment">//父进程</span><br>        close(fd[<span class="hljs-number">1</span>]);     <span class="hljs-comment">//关闭管道写端</span><br>        ret = read(fd[<span class="hljs-number">0</span>], buf, <span class="hljs-keyword">sizeof</span>(buf)); <span class="hljs-comment">//父进程从管道读端读取数据</span><br>        <span class="hljs-built_in">printf</span>(<span class="hljs-string">&quot;Parent read %d bytes data: %s\n&quot;</span>,ret,buf);<br>    &#125;<br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure><h1 id="四、Linux-中管道"><a href="#四、Linux-中管道" class="headerlink" title="四、Linux 中管道"></a>四、Linux 中管道</h1>]]></content>
+    
+    
+    <categories>
+      
+      <category>操作系统</category>
+      
+      <category>进程间通信</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>OS</tag>
+      
+      <tag>IPC</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>共享内存（一）</title>
+    <link href="/2023/04/10/SharedMemory1/"/>
+    <url>/2023/04/10/SharedMemory1/</url>
+    
+    <content type="html"><![CDATA[]]></content>
+    
+    
+    <categories>
+      
+      <category>操作系统</category>
+      
+      <category>进程间通信</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>OS</tag>
+      
+      <tag>IPC</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>虚拟内存（二）</title>
     <link href="/2023/04/03/VirtualMemory2/"/>
     <url>/2023/04/03/VirtualMemory2/</url>
